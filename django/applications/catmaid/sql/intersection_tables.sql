@@ -71,7 +71,6 @@ DECLARE
   dimension stack.dimension%TYPE;
   resolution stack.resolution%TYPE;
   orientation integer;
-  loc treenode.location%TYPE;
   skeleton_class_id integer;
   root_node_id integer;
   skeleton class_instance%ROWTYPE;
@@ -81,6 +80,9 @@ DECLARE
   num_treenodes integer;
   treenode_count integer;
   insert_statement text;
+  direction treenode.location%TYPE;
+  direction_length double precision;
+  new_location treenode.location%TYPE;
   -- edge_count integer;
 BEGIN
   -- Get the stack's dimension and resolution
@@ -225,25 +227,36 @@ BEGIN
       -- Continue with next node if there are -1 or zero intersections. Minus
       -- one will happen for the root node and zero if the parent node is on the
       -- next slice. Display intersections with:
-      -- RAISE NOTICE '# Intersections: %', num_intersections;
-      IF num_intersections > 0 THEN
+      RAISE NOTICE '# Intersections: %', num_intersections;
+      IF num_intersections < 1 THEN
         CONTINUE;
       END IF;
 
-      -- Calculate the vector in direction of the next intersection
+      -- Calculate the direction of the next intersection (not normalized)
+      direction.x := (node.parent_location).x - (node.location).x;
+      direction.y := (node.parent_location).y - (node.location).y;
+      direction.z := (node.parent_location).z - (node.location).z;
+      -- Normalize this vector
+      direction_length = sqrt(direction.x * direction.x + direction.y * direction.y + direction.z * direction.z);
+      direction.x := direction.x / direction_length;
+      direction.y := direction.y / direction_length;
+      direction.z := direction.z / direction_length;
       
       -- If the parent node's Z is lower than the current node's Z, check
       -- backwars for intersections. Otherwise go forwards.
       IF is_below(node.parent_location, node.location) THEN
         -- Go to the next intersection before this slice
         WHILE num_intersections > 0 LOOP
-          RAISE NOTICE '  Adding addition intersection';
+          new_location.x = node.location.x + num_intersections * direction.x;
+          new_location.y = node.location.y + num_intersections * direction.y;
+          new_location.z = node.location.z + num_intersections * direction.z;
+          RAISE NOTICE '  Adding addition intersection below current node at %', new_location;
           num_intersections = num_intersections - 1;
         END LOOP;
       ELSE
         -- Go to the next intersection after this slice
         WHILE num_intersections > 0 LOOP
-          RAISE NOTICE '  Adding addition intersection';
+          RAISE NOTICE '  Adding addition intersection above current node';
           num_intersections = num_intersections - 1;
         END LOOP;
       END IF;
@@ -274,7 +287,7 @@ CREATE OR REPLACE FUNCTION intersection_test()
 RETURNS void AS $$
 BEGIN
   PERFORM recreate_intersection_table('catmaid_skeleton_intersections');
-  PERFORM populate_intersection_table(1,1, 'catmaid_skeleton_intersections');
+  PERFORM populate_intersection_table(1,2, 'catmaid_skeleton_intersections');
   RETURN;
 END;
 $$ LANGUAGE plpgsql;
