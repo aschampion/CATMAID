@@ -108,14 +108,25 @@ function TileLayer(
 		 * we take the zero zoom level and adjust the tile properties.
 		 * This way we let the browser do the zooming work.
 		 */
-		if (zoom < 0) {
+		if (zoom < 0 || zoom % 1 !== 0) {
 			artificialZoom = true;
-			mag = Math.pow(2, -zoom);
-			zoom = 0;
+			/* For nonintegral zoom levels the ceiling is used to select
+			 * source image zoom level. While using the floor would allow
+			 * better image quality, it would requiring dynamically
+			 * increasing the number of tiles to fill the viewport since
+			 * in that case effectiveTileWidth < tileWidth.
+			 */
+			zoom = Math.max(0, Math.ceil(zoom));
+			/* Magnification is positive for digital zoom beyond image
+			 * resolution and negative for non-integral zooms within
+			 * image resolution.
+			 */
+			mag = Math.pow(2, zoom - stack.s);
 		}
 
-		var effectiveTileWidth = tileWidth * mag;
-		var effectiveTileHeight = tileHeight * mag;
+		// Round effective dimensions to prevent tile seams.
+		var effectiveTileWidth = Math.round(tileWidth * mag);
+		var effectiveTileHeight = Math.round(tileHeight * mag);
 
 		var fr = Math.floor( stack.yc / effectiveTileHeight );
 		var fc = Math.floor( stack.xc / effectiveTileWidth );

@@ -42,7 +42,9 @@ function Navigator()
 			388,
 			388,
 			1,
-			function( val ){ statusBar.replaceLast( "z: " + val ); return; } );
+			function( val ){ statusBar.replaceLast( "z: " + val ); return; },
+			undefined,
+			true );
 	
 	this.slider_s = new Slider(
 			SLIDER_HORIZONTAL,
@@ -56,7 +58,9 @@ function Navigator()
 				4,
 				8 ),
 			8,
-			function( val ){ statusBar.replaceLast( "s: " + val ); } );
+			function( val ){ statusBar.replaceLast( "s: " + val ); },
+			undefined,
+			false );
 	
 	var slider_z_box = document.createElement( "div" );
 	slider_z_box.className = "box";

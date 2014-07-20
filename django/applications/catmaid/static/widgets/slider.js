@@ -19,8 +19,9 @@ Slider = function(
   max,      //!< the maximal value
   steps,    //!< number of steps or an array of values
   def,      //!< default value
-  onchange,  //!< method to call
-  split     //!< split value
+  onchange, //!< method to call
+  split,    //!< split value
+  forceSnap //!< whether to force input to snap to indexed values
   )
 {
   /**
@@ -44,17 +45,39 @@ Slider = function(
    */
   var setByIndex = function( i, cancelOnchange )
   {
+    setHandle(i);
+
+    self.val = values[ i ];
+    if ( input )
+    {
+      input.value = self.val;
+    }
+    ind = i;
+
+    if ( !cancelOnchange ) self.onchange( self.val );
+
+    return;
+  }
+
+  /**
+   * set the handle position based on the slider value
+   *
+   * param {number} index Index of the value to move to, may be nonintegral
+   */
+  var setHandle = function (index)
+  {
     if ( values.length > 1 )
-      handlePos = i / ( values.length - 1 ) * barSize;
+      handlePos = index / ( values.length - 1 ) * barSize;
     else
       handlePos = 0;
+
     switch ( type )
     {
     case SLIDER_VERTICAL:
       barTop.style.height = ( handlePos + handleTop ) + "px";
       barBottom.style.height = ( barSize - handlePos + handleBottom ) + "px";
       // select CSS class
-      if (i < splitIndex) {
+      if (index < splitIndex) {
         barTop.className = "vSliderBarTop";
         barBottom.className = "vSliderBarBottom";
       } else {
@@ -68,7 +91,7 @@ Slider = function(
       barTop.style.width = ( w + handleTop ) + "px";
       barBottom.style.width = ( barSize - w + handleSize + handleBottom ) + "px";
       // select CSS class
-      if (i < splitIndex) {
+      if (index < splitIndex) {
         barTop.className = "hSliderBarTop";
         barBottom.className = "hSliderBarBottom";
       } else {
@@ -77,12 +100,49 @@ Slider = function(
       }
       break;
     }
-    self.val = values[ i ];
+  }
+
+  /**
+   * set a value even if it is not in the value index
+   * assumes the value array is sorted and unique, but no assumptions
+   * are made about order or interval
+   */
+  var setByArbitraryValue = function( val, cancelOnchange )
+  {
+    var valBin = 0;
+    var index;
+    if ( values.length > 1 ) {
+      var ascending = values[0] < values[values.length - 1];
+      var minVal = ascending ? values[0] : values[values.length - 1];
+      var maxVal = !ascending ? values[0] : values[values.length - 1];
+
+      // Clamp val to values range
+      if (val < minVal)
+        val = minVal;
+      else if (val > maxVal)
+        val = maxVal;
+
+      // Sequential search because the length of values should be small
+      valBin = ascending ? 0 : ( values.length - 2 );
+      while ( val > values[valBin + ( ascending ? 1 : 0 )] ) ascending ? valBin++ : valBin--;
+
+      // Linearly interpolate handle position between nearest value ticks
+      index = valBin + ( val - values[valBin] )/( values[valBin + 1] - values[valBin] );
+    }
+    else
+    {
+      index = 0;
+      val = values[0];
+    }
+
+    setHandle(index);
+
+    self.val = val;
     if ( input )
     {
       input.value = self.val;
     }
-    ind = i;
+    ind = valBin;
     
     if ( !cancelOnchange ) self.onchange( self.val );
     
@@ -94,11 +154,17 @@ Slider = function(
    */
   this.setByValue = function( val, cancelOnchange )
   {
-    var i = isValue( val );
-    if ( i > -1 )
+    if ( forceSnap )
     {
-      setByIndex( i, cancelOnchange );
+      var i = isValue( val );
+      if ( i > -1 )
+      {
+        setByIndex( i, cancelOnchange );
+      }
     }
+    else
+      setByArbitraryValue(val, cancelOnchange);
+
     return;
   }
   
@@ -107,15 +173,8 @@ Slider = function(
    */
   var setByInput = function( e )
   {
-    var i = isValue( this.value );
-    if ( i > -1 )
-    {
-      setByIndex( i );
-    }
-    else
-    {
-      this.value = self.val;
-    }
+    self.setByValue(Number(this.value));
+
     return;
   }
   
