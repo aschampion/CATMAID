@@ -17,7 +17,8 @@ Slider = function(
   input,    //!< create an input or not
   min,      //!< the minimal value
   max,      //!< the maximal value
-  steps,    //!< number of steps or an array of values
+  steps,    //!< number of steps, an array of values,
+            //!< or a hash of either for major and minor steps
   def,      //!< default value
   onchange, //!< method to call
   split,    //!< split value
@@ -57,7 +58,7 @@ Slider = function(
     if ( !cancelOnchange ) self.onchange( self.val );
 
     return;
-  }
+  };
 
   /**
    * set the handle position based on the slider value
@@ -100,7 +101,7 @@ Slider = function(
       }
       break;
     }
-  }
+  };
 
   /**
    * set a value even if it is not in the value index
@@ -112,19 +113,7 @@ Slider = function(
     var valBin = 0;
     var index;
     if ( values.length > 1 ) {
-      var ascending = values[0] < values[values.length - 1];
-      var minVal = ascending ? values[0] : values[values.length - 1];
-      var maxVal = !ascending ? values[0] : values[values.length - 1];
-
-      // Clamp val to values range
-      if (val < minVal)
-        val = minVal;
-      else if (val > maxVal)
-        val = maxVal;
-
-      // Sequential search because the length of values should be small
-      valBin = ascending ? 0 : ( values.length - 2 );
-      while ( val > values[valBin + ( ascending ? 1 : 0 )] ) ascending ? valBin++ : valBin--;
+      valBin = binValue(val, values);
 
       // Linearly interpolate handle position between nearest value ticks
       index = valBin + ( val - values[valBin] )/( values[valBin + 1] - values[valBin] );
@@ -147,7 +136,29 @@ Slider = function(
     if ( !cancelOnchange ) self.onchange( self.val );
     
     return;
-  }
+  };
+
+  /**
+   * Find the index of value in a set of bins.
+   */
+  var binValue = function( val, bins )
+  {
+    var ascending = bins[0] < bins[bins.length - 1];
+    var minVal = ascending ? bins[0] : bins[bins.length - 1];
+    var maxVal = !ascending ? bins[0] : bins[bins.length - 1];
+
+    // Clamp val to bins range
+    if (val < minVal)
+      val = minVal;
+    else if (val > maxVal)
+      val = maxVal;
+
+    // Sequential search because the length of bins should be small
+    valBin = ascending ? 0 : ( bins.length - 2 );
+    while ( val > bins[valBin + ( ascending ? 1 : 0 )] ) ascending ? valBin++ : valBin--;
+
+    return valBin;
+  };
   
   /**
    * set a value, priorly check if it is in the value array
@@ -166,7 +177,7 @@ Slider = function(
       setByArbitraryValue(val, cancelOnchange);
 
     return;
-  }
+  };
   
   /**
    * set a value, priorly check if it is in the value array
@@ -176,7 +187,7 @@ Slider = function(
     self.setByValue(Number(this.value));
 
     return;
-  }
+  };
   
   /**
    * check if a value is in the value array
@@ -254,27 +265,58 @@ Slider = function(
     if ( w )
     {
       if ( type == SLIDER_HORIZONTAL ) w *= -1;
-      if ( w > 0 )
-      {
-        setByIndex( Math.min( values.length - 1, ind + 1 ) );
-      }
-      else
-      {
-        setByIndex( Math.max( 0, ind - 1 ) );
-      }
+
+      self.move( w > 0 ? 1 : -1, e.shiftKey );
     }
     return false;
-  }
+  };
   
   /**
    * decreases the index and invoke timeout
    */
   var decrease = function()
   {
-    setByIndex( Math.max( 0, ind - 1 ) );
+    self.move( -1 );
     timer = window.setTimeout( decrease, 250 );
     return;
-  }
+  };
+
+  /**
+   * increases the index and invoke timeout
+   */
+  var increase = function()
+  {
+    self.move( 1 );
+    timer = window.setTimeout( increase, 250 );
+    return;
+  };
+
+  /**
+   * move the slider from outside
+   */
+  this.move = function( i, major )
+  {
+    if ( major )
+    {
+      valBin = binValue( self.val, majorValues );
+
+      if ( i < 0 && self.val !== majorValues[ valBin ] )
+      {
+        valBin++;
+      }
+      else if ( i > 0 && ( valBin < majorValues.length - 1 ) &&
+        self.val === majorValues[ valBin + 1 ] )
+      {
+        valBin++;
+      }
+
+      setByIndex( isValue( majorValues[ Math.max( 0, Math.min( majorValues.length - 1, valBin + i ) ) ] ) );
+    }
+    else
+    {
+      setByIndex( Math.max( 0, Math.min( values.length - 1, ind + i ) ) );
+    }
+  };
   
   /**
    * mouse down on the top bar, so move up, setting a timer
@@ -293,16 +335,6 @@ Slider = function(
   }
   
   /**
-   * increases the index and invoke timeout
-   */
-  var increase = function()
-  {
-    setByIndex( Math.min( values.length - 1, ind + 1 ) );
-    timer = window.setTimeout( increase, 250 );
-    return;
-  }
-  
-  /**
    * mouse down on the top bar, so move up, setting a timer
    */
   var barBottomMouseDown = function( e )
@@ -316,14 +348,6 @@ Slider = function(
     
     increase();
     return false;
-  }
-  
-  /**
-   * move the slider from outside
-   */
-  this.move = function( i )
-  {
-    setByIndex( Math.max( 0, Math.min( values.length - 1, ind + i ) ) );
   }
   
   /**
@@ -362,31 +386,50 @@ Slider = function(
   }
   
   this.update = function(
-    min,				//!< the minimal value
-    max,				//!< the maximal value
-    steps,				//!< number of steps or an array of values
-    def,				//!< default value
-    onchange,			//!< method to call
-    split              //!< split value
+    min,      //!< the minimal value
+    max,      //!< the maximal value
+    steps,    //!< number of steps, an array of values,
+              //!< or a hash of either for major and minor steps
+    def,      //!< default value
+    onchange, //!< method to call
+    split     //!< split value
   )
   {
     this.onchange = onchange;
-    if ( ( typeof steps ) == "number" )
+
+    // If steps is not a hash, create one.
+    if ( ! ( ( typeof steps ) === "object" && ! steps.isArray ) )
     {
-      values = new Array();
-      if ( steps > 1 )
-        var s = ( max - min ) / ( steps - 1 );
-      else
-        var s = 0;
-      for ( var i = 0; i < steps; ++i )
-        values [ i ] = i * s + min;
+      steps = { major: steps, minor: steps };
     }
-    else if ( ( typeof steps ) == "object" )
-    {
-      values = steps;
-      min = steps[ 0 ];
-      max = steps[ steps.length - 1 ];
-    }
+
+    values = [ steps.major, steps.minor ].map( function ( steps ) {
+      var values = [];
+
+      if ( ( typeof steps ) === "number" )
+      {
+        var s;
+        if ( steps > 1 )
+          s = ( max - min ) / ( steps - 1 );
+        else
+          s = 0;
+        for ( var i = 0; i < steps; ++i )
+          values[ i ] = i * s + min;
+      }
+      else if ( ( typeof steps ) === "object" )
+      {
+        values = steps;
+      }
+
+      return values;
+    } );
+
+    majorValues = values[ 0 ];
+    // Combine major and minor values, sort, and filter duplicates.
+    values = majorValues.concat( values[ 1 ] ).sort( function ( a, b ) { return a - b; } );
+    if ( majorValues[ 0 ] > majorValues[ majorValues.length - 1 ] ) values.reverse();
+    values = values.filter( function ( el, ind, arr )
+      { return ind === arr.indexOf( el ); } );
 
     // was a split parameter passed?
     if (split === undefined)
@@ -415,7 +458,7 @@ Slider = function(
     }
     
     return;
-  }
+  };
   
   // initialise
   
@@ -428,8 +471,9 @@ Slider = function(
   var handlePos = 0;
   
   var values;
+  var majorValues;
   var ind = 0;  //!< the current index
-  this.val;     //!< the current value
+  this.val = 0;     //!< the current value
   var splitIndex = 0; //!< index where to change div class
 
   if ( !ui ) ui = new UI();

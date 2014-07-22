@@ -363,7 +363,7 @@ function Navigator()
 				'+': [ 43, 107, 61, 187 ]
 			},
 			run: function (e) {
-				self.slider_s.move(1);
+				self.slider_s.move(1, e.shiftKey);
 				return true;
 			}
 		}),
@@ -374,7 +374,7 @@ function Navigator()
 				'-': [ 45, 109, 189 ]
 			},
 			run: function (e) {
-				self.slider_s.move(-1);
+				self.slider_s.move(-1, e.shiftKey);
 				return true;
 			}
 		}),
@@ -483,7 +483,8 @@ function Navigator()
 		self.slider_s.update(
 			self.stack.MAX_S,
 			self.stack.MIN_S,
-			(Math.abs(self.stack.MAX_S) + Math.abs(self.stack.MIN_S)) + 1,
+			{ major: (Math.abs(self.stack.MAX_S) + Math.abs(self.stack.MIN_S)) + 1,
+			  minor: (Math.abs(self.stack.MAX_S) + Math.abs(self.stack.MIN_S))*10 + 1 },
 			self.stack.s,
 			self.changeScaleDelayed,
 			-1 );
@@ -497,9 +498,10 @@ function Navigator()
 			self.slider_z.getView().parentNode.style.display = "block";
 		}
 		self.slider_z.update(
-			0,
-			0,
-			self.stack.slices,
+			undefined,
+			undefined,
+			{ major: self.stack.slices.filter(function(el,ind,arr) { return (ind % 10) === 0; }),
+			  minor: self.stack.slices },
 			self.stack.z,
 			self.changeSliceDelayed );
 		
