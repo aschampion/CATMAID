@@ -429,6 +429,7 @@ WebGLApplication.prototype.addSkeletons = function(models, callback) {
       skeleton.setPostVisibility(model.post_visible);
       skeleton.setTextVisibility(model.text_visible);
       skeleton.actorColor = model.color.clone();
+      skeleton.opacity = model.opacity;
       skeleton.updateSkeletonColor(this.options);
       return false;
     }
@@ -1483,6 +1484,7 @@ WebGLApplication.prototype.Space.prototype.Skeleton = function(space, skeletonmo
 	this.baseName = skeletonmodel.baseName;
   this.synapticColors = space.staticContent.synapticColors;
   this.skeletonmodel = skeletonmodel;
+  this.opacity = 1;
   // This is an index mapping treenode IDs to lists of reviewers. Attaching them
   // directly to the nodes is too much of a performance hit.
   // Gets loaded dynamically, and erased when refreshing (because a new Skeleton is instantiated with the same model).
@@ -2040,6 +2042,8 @@ WebGLApplication.prototype.Space.prototype.Skeleton.prototype.updateSkeletonColo
     this.line_material.needsUpdate = true;
     
     this.actor['neurite'].material.color = this.actorColor;
+    this.actor['neurite'].material.opacity = this.opacity;
+    this.actor['neurite'].material.transparent = this.opacity !== 1;
     this.actor['neurite'].material.needsUpdate = true; // TODO repeated it's the line_material
 
     var material = new THREE.MeshBasicMaterial({color: this.actorColor, opacity:1.0, transparent:false});
