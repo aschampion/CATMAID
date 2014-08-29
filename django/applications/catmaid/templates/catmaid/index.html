@@ -48,6 +48,7 @@
 			var django_url = "{{ CATMAID_URL }}";
 		</script>
 
+		<script type="text/javascript" src="{{ STATIC_URL }}libs/modernizr/modernizr.custom.52268.js"></script>
 		<script type="text/javascript" src="{{ STATIC_URL }}libs/jquery/jquery.js"></script>
 		<script type="text/javascript" src="{{ STATIC_URL }}libs/jquery/jquery.dataTables.js"></script>
 		<script type="text/javascript" src="{{ STATIC_URL }}libs/jquery/dataTables.colReorder.js"></script>
@@ -158,6 +159,14 @@
 		<script type="text/javascript" src="{{ STATIC_URL }}layers/gridlayer.js"></script>
 	</head>
 	<body onload="realInit();"><a></a>
+		<noscript>
+			<div id="browser_unsupported">
+				<h1>CATMAID requires javascript.</h1>
+				<p>
+					Your browser does not support javascript or it is not enabled. To use CATMAID please use either <a href="https://www.mozilla.org/firefox/">Firefox</a> or <a href="https://www.google.com/chrome/">Chrome</a> with javascript enabled.
+				</p>
+			</div>
+		</noscript>
 		<div id="growl-alert" class="growl-message" style="display: none"></div>
 		<!-- Toolbars
 		***********************************************************************

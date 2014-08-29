@@ -966,6 +966,11 @@ function global_resize( e )
 	return true;
 }
 
+var browserFeatureCheck = function() {
+	return Modernizr.opacity && Modernizr.canvas && Modernizr.inlinesvg &&
+		   Modernizr.svg && Modernizr.webgl;
+};
+
 /**
  * initialise everything
  * to be called by the onload-handler of document.body
