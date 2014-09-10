@@ -463,6 +463,14 @@ class TreenodeConnector(UserFocusedModel):
     skeleton = models.ForeignKey(ClassInstance)
     confidence = models.IntegerField(default=5)
 
+
+class SkeletonSummary(models.Model):
+    class Meta:
+        db_table = "skeleton_summary"
+    skeleton = models.OneToOneField(ClassInstance, primary_key=True)
+    treenode_count = models.BigIntegerField()
+
+
 class Review(models.Model):
     """ This model represents the review of a user of one particular tree node
     of a specific skeleton. Technically, the treenode ID is enough to get the
