@@ -375,7 +375,31 @@ function TileLayer(
 		self.redraw();
 		return;
 	};
-	
+
+	this.cacheTiles = function(tileIndices, progressCallback) {
+
+		var numLoaders = Math.min(batchSize, tileIndices.length);
+		var loaded = 0;
+		var remaining = tileIndices.slice(numLoaders);
+
+		var loaders = tileIndices.slice(0, numLoaders).reduce(function (ldrs, ind) {
+			var img = new Image();
+			img.onload = img.onerror = function () {
+				loaded += 1;
+				if (loaded >= numLoaders) self.cacheTiles(remaining);
+			};
+			img.src = 
+			ldrs.push(img);
+			return ldrs;
+		}, []);
+	};
+
+	this.cacheLocations = function(locations, s, progressCallback) {
+		if (typeof s === 'undefined') s = stack.s;
+
+
+	};
+
 	/**
 	 * Get the width of an image tile.
 	 */
