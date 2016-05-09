@@ -58,6 +58,69 @@ var SkeletonAnnotations = {
 
 };
 
+SkeletonAnnotations.MagicAnnotations = {
+  annotations: {magic1: undefined, magic2: undefined},
+  skeletons: {},
+  cssRule: undefined,
+  refresh: function () {
+    SkeletonAnnotations.MagicAnnotations.annotations =
+      Object.keys(SkeletonAnnotations.MagicAnnotations.annotations).reduce(
+        function (o, name) { o[name] = CATMAID.annotations.getID(name); return o; }, {});
+    SkeletonAnnotations.MagicAnnotations.skeletons =
+      Object.keys(SkeletonAnnotations.MagicAnnotations.annotations).reduce(
+        function (o, name) { o[name] = new Set(); return o; }, {});
+    Object.keys(SkeletonAnnotations.MagicAnnotations.annotations).forEach(
+      function (name) {
+        CATMAID
+            .fetch(project.id + '/annotations/query-targets',
+                   'POST',
+                   {
+                     annotated_with: SkeletonAnnotations.MagicAnnotations.annotations[name],
+                     types: 'neuron'
+                   })
+            .then(function (json) {
+              var skids = json.entities.reduce(function (a, e) {
+                return a.concat(e.skeleton_ids);
+              }, []);
+              SkeletonAnnotations.MagicAnnotations.skeletons[name] = new Set(skids);
+            });
+      });
+
+    for (var i in document.styleSheets)
+      for (var j in document.styleSheets[i].rules)
+        if (document.styleSheets[i].rules[j].selectorText == 'svg .magic1')
+          SkeletonAnnotations.MagicAnnotations.cssRule = document.styleSheets[i].rules[j];
+  },
+  toggle: function () {
+    var rule = SkeletonAnnotations.MagicAnnotations.cssRule;
+    if (typeof rule === 'undefined') return;
+
+    var hidden = rule.style.display === 'none';
+    rule.style.display = hidden ? 'inherit' : 'none';
+  }
+};
+
+SkeletonAnnotations.MagicAnnotations.skeletons = Object.keys(SkeletonAnnotations.MagicAnnotations.annotations).reduce(function (o, name) {
+    o[name] = new Set(); return o; }, {});
+
+// TODO: this results in annotations being updated multiple times.
+CATMAID.Init.on(CATMAID.Init.EVENT_PROJECT_CHANGED, function () {
+  CATMAID.annotations.update(SkeletonAnnotations.MagicAnnotations.refresh);
+});
+
+CATMAID.Skeletons.on(CATMAID.Skeletons.EVENT_SKELETON_CHANGED, function (skeletonId) {
+  if ( SkeletonAnnotations.MagicAnnotations.skeletons.magic1.has(skeletonId) &&
+      !SkeletonAnnotations.MagicAnnotations.skeletons.magic2.has(skeletonId)) {
+    CATMAID.Annotations.add(project.id,
+                            null,
+                            [skeletonId],
+                            ['magic2'],
+                            null);
+    SkeletonAnnotations.MagicAnnotations.skeletons.magic2.add(skeletonId);
+  }
+});
+
+
 /**
  * If the active node is deleted, the active node will be changed to the passed
  * in parent (if any). Otherwise, the active node just becomes unselected.

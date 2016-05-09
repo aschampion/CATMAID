@@ -40,3 +40,11 @@ svg .label:hover {
   /* display and visibility are cheaper than opacity, but cause flicker. */
   opacity: 0;
 }
+
+svg .magic1 {
+  display: none;
+}
+
+svg .magic2 {
+  display: inline;
+}

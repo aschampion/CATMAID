@@ -311,6 +311,8 @@
           'stroke-width': this.CATCH_RADIUS*2,// Use a large transparent stroke to
           'stroke-opacity': 0                 // catch mouse events near the circle.
         });
+        this.c.classed('magic1', SkeletonAnnotations.MagicAnnotations.skeletons.magic1.has(this.skeleton_id));
+        this.c.classed('magic2', SkeletonAnnotations.MagicAnnotations.skeletons.magic2.has(this.skeleton_id));
         this.c.datum(this.id);
 
         if ("hidden" === this.c.attr('visibility')) this.c.show();
@@ -561,6 +563,8 @@
             stroke: lineColor,
             'stroke-width': this.EDGE_WIDTH
         });
+        this.line.classed('magic1', SkeletonAnnotations.MagicAnnotations.skeletons.magic1.has(this.skeleton_id));
+        this.line.classed('magic2', SkeletonAnnotations.MagicAnnotations.skeletons.magic2.has(this.skeleton_id));
 
         // May be hidden if the node was reused
         this.line.show();
@@ -655,6 +659,8 @@
         this.connectors = {};
         if (this.c) {
           this.c.datum(null);
+          this.c.classed('magic1', false);
+          this.c.classed('magic2', false);
           this.c.hide();
         }
         if (this.radiusGraphics) {
@@ -662,6 +668,8 @@
           this.radiusGraphics = null;
         }
         if (this.line) {
+          this.line.classed('magic1', false);
+          this.line.classed('magic2', false);
           this.line.hide();
         }
         if (this.number_text) {

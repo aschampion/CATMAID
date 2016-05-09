@@ -1083,6 +1083,15 @@
       }
     }));
 
+    this.addAction(new CATMAID.Action({
+      helpText: "Toggle display of skeletons with magic annotations",
+      keyShortcuts: { 'HOME': [ 36 ] },
+      run: function (e) {
+        SkeletonAnnotations.MagicAnnotations.toggle();
+        return true;
+      }
+    }));
+
 
     var keyCodeToAction = CATMAID.getKeyCodeToActionMap(actions);
 
